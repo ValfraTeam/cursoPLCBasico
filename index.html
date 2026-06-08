@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLC desde Cero — Curso Básico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #39ff7a;
+    --text: #e8edf5;
+    --muted: #6b7a9a;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 60% 40%, rgba(0,212,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 10% 80%, rgba(57,255,122,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .badge::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent3);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.4; transform:scale(0.7); }
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  h1 span.hl { color: var(--accent); }
+  h1 span.hl2 { color: var(--accent2); }
+
+  .hero-desc {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 580px;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 14px 28px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+
+  .btn-primary:hover {
+    background: #33ddff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,212,255,0.3);
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+
+  .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-inner::-webkit-scrollbar { display: none; }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 1rem 0;
+    margin-right: 2rem;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    padding: 1rem 1rem;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  section {
+    padding: 5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    line-height: 1.2;
+  }
+
+  /* ─── UNIDADES / TABS ─── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 3rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 12px 20px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── UNIDAD CONTENT ─── */
+  .unit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  @media(max-width:720px) {
+    .unit-grid { grid-template-columns: 1fr; }
+  }
+
+  .theory-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+  }
+
+  .theory-card h3 {
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .theory-card p {
+    color: #c0cce0;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+
+  .theory-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .theory-card ul li {
+    font-size: 0.9rem;
+    color: #c0cce0;
+    padding-left: 1.2rem;
+    position: relative;
+  }
+
+  .theory-card ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent3);
+  }
+
+  .chip {
+    display: inline-block;
+    background: rgba(57,255,122,0.1);
+    border: 1px solid rgba(57,255,122,0.2);
+    color: var(--accent3);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
+
+  .chip.orange {
+    background: rgba(255,107,53,0.1);
+    border-color: rgba(255,107,53,0.2);
+    color: var(--accent2);
+  }
+
+  /* ─── VIDEO CARD ─── */
+  .video-section { margin-top: 2.5rem; }
+
+  .video-section h3 {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+  }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .video-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .video-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0,212,255,0.3);
+  }
+
+  .video-thumb {
+    position: relative;
+    padding-bottom: 56.25%;
+    background: #080c18;
+    cursor: pointer;
+  }
+
+  .video-thumb iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .video-thumb .play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    transition: opacity 0.2s;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  .video-thumb .play-overlay .play-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(0,212,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .video-thumb:hover .play-overlay { opacity:0.9; }
+  .video-thumb .play-overlay .play-btn svg { fill: #0a0e1a; margin-left: 4px; }
+  .video-thumb.loaded .play-overlay { display:none; }
+
+  .video-info {
+    padding: 1rem 1.2rem;
+  }
+
+  .video-info .v-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .video-info .v-channel {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* ─── LADDER REFERENCE ─── */
+  .ladder-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-bottom: 2rem;
+  }
+
+  .ladder-table th {
+    background: var(--surface2);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ladder-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(30,45,71,0.5);
+    color: #c0cce0;
+    vertical-align: top;
+  }
+
+  .ladder-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .code {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* ─── EJERCICIOS ─── */
+  .ej-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ej-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 8px 8px 0;
+    padding: 1.4rem 1.8rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .ej-card:hover { border-left-color: var(--accent); }
+
+  .ej-card .ej-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .ej-card .ej-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .ej-card .ej-title {
+    font-weight: 500;
+    font-size: 0.95rem;
+    flex: 1;
+  }
+
+  .ej-card .ej-toggle {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .ej-card.open .ej-toggle { transform: rotate(180deg); }
+
+  .ej-body {
+    display: none;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: #b0bdd4;
+  }
+
+  .ej-body.open { display: block; }
+
+  .ej-body ol {
+    padding-left: 1.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .ej-body ol li { margin-bottom: 6px; }
+
+  /* ─── SOFTWARE ─── */
+  .sw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .sw-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.8rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .sw-card:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .sw-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .sw-name {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .sw-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .sw-tag {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--accent3);
+    text-transform: uppercase;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 3px;
+    width: 0%;
+    transition: width 1s ease;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 3rem 2rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+
+  footer span { color: var(--accent); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#hero">⚡ PLC_CURSO</a>
+    <a href="#unidades">Unidades</a>
+    <a href="#referencia">Referencia</a>
+    <a href="#ejercicios">Ejercicios</a>
+    <a href="#software">Software</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-inner">
+    <div class="badge">Curso Básico · IEC 61131-3 · Software Libre</div>
+    <h1>
+      Programación de<br>
+      <span class="hl">PLC</span> desde <span class="hl2">cero</span>
+    </h1>
+    <p class="hero-desc">
+      Dominá los fundamentos de los Controladores Lógicos Programables.
+      Teoría completa, videos seleccionados y ejercicios prácticos con simuladores gratuitos.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">4</span>
+        <span class="stat-label">Unidades</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">12+</span>
+        <span class="stat-label">Videos</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">20+</span>
+        <span class="stat-label">Ejercicios</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">Gratis</span>
+      </div>
+    </div>
+    <a href="#unidades" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Empezar curso
+    </a>
+  </div>
+</section>
+
+<!-- UNIDADES -->
+<section id="unidades">
+  <div class="container">
+    <div class="section-label">Contenido</div>
+    <h2>Unidades del curso</h2>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Tu progreso</span>
+        <span id="prog-pct">0 / 4 unidades</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="prog-fill"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(0)">U1 · Generalidades</button>
+      <button class="tab-btn" onclick="switchTab(1)">U2 · IEC 61131-3</button>
+      <button class="tab-btn" onclick="switchTab(2)">U3 · Ladder</button>
+      <button class="tab-btn" onclick="switchTab(3)">U4 · Práctica</button>
+    </div>
+
+    <!-- UNIDAD 1 -->
+    <div class="tab-panel active" id="panel-0">
+      <div class="unit-grid">
+        <div class="theory-card">
+          <h3>📋 Generalidades de los PLC</h3>
+          <p>Un <strong>PLC (Controlador Lógico Programable)</strong> es un dispositivo electrónico diseñado para el control de procesos industriales mediante una lógica programable almacenada en memoria.</p>
+          <p><strong>Estructura interna:</strong></p>
+          <ul>
+            <li>CPU — procesa el programa de usuario</li>
+            <li>Memoria — programa + datos (RAM, ROM/EPROM)</li>
+            <li>Módulos de E/S — entradas y salidas digitales/analógicas</li>
+            <li>Fuente de alimentación — 24 VDC / 220 VAC</li>
+            <li>Bus de comunicaciones interno</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Estructura externa:</strong></p>
+          <ul>
+            <li>Bornes de entrada (sensores, pulsadores, fines de carrera)</li>
+            <li>Bornes de salida (contactores, válvulas, lámparas)</li>
+            <li>Puerto de programación (USB, RS-232, Ethernet)</li>
+            <li>Display y LEDs de diagnóstico</li>
+          </ul>
+        </div>
+        <div class="theory-card">
+          <h3>🔩 Tipos de PLC</h3>
+          <p><strong>PLCs Compactos:</strong> CPU, E/S y fuente integrados en una sola carcasa. Ideales para máquinas pequeñas y medianas.</p>
+          <ul>
+            <li>Menor costo y tamaño reducido</li>
+            <li>Expansión limitada por módulos adicionales</li>
+            <li>Ej: Siemens S7-1200, Allen-Bradley Micro820</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>PLCs Modulares:</strong> Chasis o rack con módulos intercambiables. Permiten alta flexibilidad.</p>
+          <ul>
+            <li>Alta capacidad de E/S</li>
+            <li>Fácil mantenimiento (hot-swap en algunos modelos)</li>
+            <li>Ej: Siemens S7-300/400, Allen-Bradley ControlLogix</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Criterios de selección:</strong></p>
+          <ul>
+            <li>Cantidad y tipo de E/S requeridas</li>
+            <li>Velocidad de ciclo de scan necesaria</li>
+            <li>Protocolos de comunicación (Profibus, Ethernet/IP)</li>
+            <li>Temperatura ambiente y grado de protección IP</li>
+          </ul>
+        </div>
+      </div>
+      <div class="video-section">
+        <h3>🎬 Videos — Unidad 1</h3>
+        <div class="video-grid">
+          <div class="video-card">
+            <div class="video-thumb" id="vt1">
+              <div class="play-overlay" onclick="loadVideo('vt1','3rFGZQz6Vuo')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Cap. 1: Introducción al PLC — PLC desde cero</div>
+              <div class="v-channel">PLC desde CERO</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt2">
+              <div class="play-overlay" onclick="loadVideo('vt2','7YFP26Go7zs')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Curso PLC Nivel 1 — Clase 1 (Gratis)</div>
+              <div class="v-channel">Automatización Industrial</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNIDAD 2 -->
+    <div class="tab-panel" id="panel-1">
+      <div class="unit-grid">
+        <div class="theory-card">
+          <h3>📐 Norma IEC 61131-3</h3>
+          <p>La norma <strong>IEC 61131-3</strong> estandariza los lenguajes de programación para PLC a nivel mundial. Define 5 lenguajes:</p>
+          <ul>
+            <li><strong>LD</strong> — Ladder Diagram (Diagrama de escalera)</li>
+            <li><strong>FBD</strong> — Function Block Diagram</li>
+            <li><strong>ST</strong> — Structured Text (tipo Pascal)</li>
+            <li><strong>IL</strong> — Instruction List (tipo Assembler)</li>
+            <li><strong>SFC</strong> — Sequential Function Chart</li>
+          </ul>
+          <p style="margin-top:1rem">Todos los lenguajes son equivalentes en potencia. La elección depende del proceso y del programador.</p>
+          <div style="margin-top:1rem">
+            <span class="chip">LD más usado</span>
+            <span class="chip">FBD procesos</span>
+            <span class="chip orange">ST avanzado</span>
+          </div>
+        </div>
+        <div class="theory-card">
+          <h3>🏗️ Modelo de software IEC 61131-3</h3>
+          <p>La norma también define una jerarquía de software:</p>
+          <ul>
+            <li><strong>Configuración</strong> — representa un sistema PLC completo</li>
+            <li><strong>Recurso</strong> — una CPU dentro de la configuración</li>
+            <li><strong>Programa (POO)</strong> — unidad lógica principal</li>
+            <li><strong>Bloque de función (FB)</strong> — con memoria propia</li>
+            <li><strong>Función (FC)</strong> — sin memoria, solo retorna valor</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Tipos de datos básicos:</strong></p>
+          <ul>
+            <li>BOOL — 1 bit (TRUE/FALSE)</li>
+            <li>INT/DINT — entero 16/32 bits</li>
+            <li>REAL — punto flotante 32 bits</li>
+            <li>TIME — duración temporal (T#5s)</li>
+            <li>STRING — cadena de caracteres</li>
+          </ul>
+        </div>
+      </div>
+      <div class="video-section">
+        <h3>🎬 Videos — Unidad 2</h3>
+        <div class="video-grid">
+          <div class="video-card">
+            <div class="video-thumb" id="vt3">
+              <div class="play-overlay" onclick="loadVideo('vt3','BtwBRNWCiww')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Cap. 2: Lenguaje Ladder — Introducción</div>
+              <div class="v-channel">PLC desde CERO</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNIDAD 3 -->
+    <div class="tab-panel" id="panel-2">
+      <div class="unit-grid">
+        <div class="theory-card">
+          <h3>🪜 Objetos básicos Ladder</h3>
+          <p><strong>Contactos:</strong></p>
+          <ul>
+            <li><strong>Contacto NA (nivel)</strong> — cierra cuando variable = TRUE. Símbolo: <code>—[ ]—</code></li>
+            <li><strong>Contacto NC (negado)</strong> — cierra cuando variable = FALSE. Símbolo: <code>—[/]—</code></li>
+            <li><strong>Contacto por flanco ascendente</strong> — un ciclo en subida <code>—[P]—</code></li>
+            <li><strong>Contacto por flanco descendente</strong> — un ciclo en bajada <code>—[N]—</code></li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Bobinas:</strong></p>
+          <ul>
+            <li><strong>Bobina normal</strong> — activa mientras condición TRUE <code>—( )—</code></li>
+            <li><strong>Bobina negada (NOT)</strong> — inversa de condición <code>—(/)—</code></li>
+            <li><strong>Bobina SET (retentiva ↑)</strong> — activa y queda activa <code>—(S)—</code></li>
+            <li><strong>Bobina RESET (retentiva ↓)</strong> — desactiva la variable <code>—(R)—</code></li>
+          </ul>
+        </div>
+        <div class="theory-card">
+          <h3>⏱️ Temporizadores y Contadores</h3>
+          <p><strong>Temporizadores IEC:</strong></p>
+          <ul>
+            <li><strong>TON</strong> — On-delay. Activa salida <em>después</em> de T retardo</li>
+            <li><strong>TOF</strong> — Off-delay. Desactiva salida <em>después</em> de T retardo</li>
+            <li><strong>TP</strong> — Pulso de duración fija, no reiniciable</li>
+            <li><strong>TONR</strong> — Acumulativo (retentivo entre ciclos)</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Contadores IEC:</strong></p>
+          <ul>
+            <li><strong>CTU</strong> — Contador ascendente (count up)</li>
+            <li><strong>CTD</strong> — Contador descendente (count down)</li>
+            <li><strong>CTUD</strong> — Bidireccional</li>
+          </ul>
+          <p style="margin-top:1rem"><strong>Bloques de comparación:</strong></p>
+          <ul>
+            <li>EQ, NE, GT, GE, LT, LE — comparan dos valores</li>
+            <li>ADD, SUB, MUL, DIV — operaciones aritméticas</li>
+          </ul>
+        </div>
+      </div>
+      <div class="video-section">
+        <h3>🎬 Videos — Unidad 3</h3>
+        <div class="video-grid">
+          <div class="video-card">
+            <div class="video-thumb" id="vt4">
+              <div class="play-overlay" onclick="loadVideo('vt4','x2cwPqNoCfg')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Cap. 6: Temporizadores TON en Ladder</div>
+              <div class="v-channel">PLC desde CERO</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt5">
+              <div class="play-overlay" onclick="loadVideo('vt5','4ZFVGcoPqmw')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Cap. 7: Temporizadores TOF en Ladder</div>
+              <div class="v-channel">PLC desde CERO</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt6">
+              <div class="play-overlay" onclick="loadVideo('vt6','j0gvPiTH4eY')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Cap. 8: Temporizadores TP y TONR</div>
+              <div class="v-channel">PLC desde CERO</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt7">
+              <div class="play-overlay" onclick="loadVideo('vt7','Mrz6U2SI0-0')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Contadores y Temporizadores con SoftComfort</div>
+              <div class="v-channel">Prof. Automatización</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt8">
+              <div class="play-overlay" onclick="loadVideo('vt8','TPRNJRUW7hs')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Temporizadores Ladder — TON, TOF, TONR con TIA Portal</div>
+              <div class="v-channel">Automatización</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNIDAD 4 -->
+    <div class="tab-panel" id="panel-3">
+      <div class="unit-grid">
+        <div class="theory-card">
+          <h3>🥁 Tambor secuenciador (Drum)</h3>
+          <p>El <strong>tambor secuenciador</strong> es una técnica para programar secuencias de pasos discretos, como un carrusel de estados.</p>
+          <ul>
+            <li>Define N pasos con combinaciones de salidas</li>
+            <li>Avanza al siguiente paso por condición o tiempo</li>
+            <li>Útil en cintas transportadoras, llenadoras, lavadoras</li>
+            <li>Se implementa con contador + comparadores</li>
+          </ul>
+          <p style="margin-top:1rem">La implementación moderna usa SFC (Grafcet) o bloques CASE en ST, pero en Ladder se replica con CTU + comparadores.</p>
+        </div>
+        <div class="theory-card">
+          <h3>🔄 Ciclo de Scan del PLC</h3>
+          <p>El programa del PLC se ejecuta cíclicamente:</p>
+          <ul>
+            <li><strong>1. Lectura de entradas</strong> — copia el estado de las entradas físicas a la imagen de proceso</li>
+            <li><strong>2. Ejecución del programa</strong> — proceso el código de arriba a abajo</li>
+            <li><strong>3. Escritura de salidas</strong> — escribe la imagen de proceso a las salidas físicas</li>
+            <li><strong>4. Tareas de fondo</strong> — comunicación, autodiagnóstico</li>
+          </ul>
+          <p style="margin-top:1rem">El tiempo de scan típico es 1–50 ms. Para eventos rápidos se usan <strong>interrupciones de hardware</strong>.</p>
+          <div style="margin-top:1rem">
+            <span class="chip">Watchdog timer</span>
+            <span class="chip orange">Tiempo de scan</span>
+          </div>
+        </div>
+      </div>
+      <div class="video-section">
+        <h3>🎬 Videos — Unidad 4</h3>
+        <div class="video-grid">
+          <div class="video-card">
+            <div class="video-thumb" id="vt9">
+              <div class="play-overlay" onclick="loadVideo('vt9','5Kx6pw-z_8E')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Contadores, Secuenciadores y Temporizadores con PLC</div>
+              <div class="v-channel">Curso PLC</div>
+            </div>
+          </div>
+          <div class="video-card">
+            <div class="video-thumb" id="vt10">
+              <div class="play-overlay" onclick="loadVideo('vt10','Sf0TrbkdLAM')">
+                <div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+            </div>
+            <div class="video-info">
+              <div class="v-title">Temporizadores TP en Ladder — TIA Portal</div>
+              <div class="v-channel">Automatización</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- REFERENCIA RÁPIDA -->
+<section id="referencia">
+  <div class="container">
+    <div class="section-label">Consulta rápida</div>
+    <h2>Referencia Ladder</h2>
+    <table class="ladder-table">
+      <thead>
+        <tr>
+          <th>Instrucción</th>
+          <th>Símbolo</th>
+          <th>Descripción</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="code">XIC</span> / Contacto NA</td>
+          <td>—[ ]—</td>
+          <td>Examina si la variable es TRUE</td>
+          <td>Normally Open Contact</td>
+        </tr>
+        <tr>
+          <td><span class="code">XIO</span> / Contacto NC</td>
+          <td>—[/]—</td>
+          <td>Examina si la variable es FALSE</td>
+          <td>Normally Closed Contact</td>
+        </tr>
+        <tr>
+          <td><span class="code">POS</span> / Flanco ↑</td>
+          <td>—[P]—</td>
+          <td>TRUE por un ciclo en flanco ascendente</td>
+          <td>Detecta el momento de activación</td>
+        </tr>
+        <tr>
+          <td><span class="code">NEG</span> / Flanco ↓</td>
+          <td>—[N]—</td>
+          <td>TRUE por un ciclo en flanco descendente</td>
+          <td>Detecta el momento de desactivación</td>
+        </tr>
+        <tr>
+          <td><span class="code">OTE</span> / Bobina normal</td>
+          <td>—( )—</td>
+          <td>Activa salida mientras haya continuidad</td>
+          <td>Output Energize</td>
+        </tr>
+        <tr>
+          <td><span class="code">OTL</span> / Bobina SET</td>
+          <td>—(S)—</td>
+          <td>Activa y retiene el bit</td>
+          <td>Output Latch</td>
+        </tr>
+        <tr>
+          <td><span class="code">OTU</span> / Bobina RST</td>
+          <td>—(R)—</td>
+          <td>Desactiva el bit retenido</td>
+          <td>Output Unlatch</td>
+        </tr>
+        <tr>
+          <td><span class="code">TON</span></td>
+          <td>BLOQUE</td>
+          <td>Temporizador con retardo a la conexión</td>
+          <td>IN, PT → Q, ET</td>
+        </tr>
+        <tr>
+          <td><span class="code">TOF</span></td>
+          <td>BLOQUE</td>
+          <td>Temporizador con retardo a la desconexión</td>
+          <td>IN, PT → Q, ET</td>
+        </tr>
+        <tr>
+          <td><span class="code">TP</span></td>
+          <td>BLOQUE</td>
+          <td>Pulso de duración fija</td>
+          <td>No reiniciable mientras activo</td>
+        </tr>
+        <tr>
+          <td><span class="code">CTU</span></td>
+          <td>BLOQUE</td>
+          <td>Contador ascendente</td>
+          <td>CU, R, PV → Q, CV</td>
+        </tr>
+        <tr>
+          <td><span class="code">CTD</span></td>
+          <td>BLOQUE</td>
+          <td>Contador descendente</td>
+          <td>CD, LD, PV → Q, CV</td>
+        </tr>
+        <tr>
+          <td><span class="code">CMP</span> / EQ, GT, LT</td>
+          <td>BLOQUE</td>
+          <td>Comparación entre dos valores</td>
+          <td>IN1, IN2 → Q (BOOL)</td>
+        </tr>
+        <tr>
+          <td><span class="code">ADD / SUB / MUL / DIV</span></td>
+          <td>BLOQUE</td>
+          <td>Operaciones aritméticas</td>
+          <td>IN1, IN2 → OUT</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- EJERCICIOS -->
+<section id="ejercicios">
+  <div class="container">
+    <div class="section-label">Práctica</div>
+    <h2>Ejercicios propuestos</h2>
+    <div class="ej-list">
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 01 · U1</span>
+          <span class="ej-title">Circuito Start/Stop de un motor</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Programar el arranque y paro de un motor con enclavamiento (auto-retención).</p>
+          <ol>
+            <li>Entrada I0.0 = Pulsador START (NA)</li>
+            <li>Entrada I0.1 = Pulsador STOP (NC)</li>
+            <li>Salida Q0.0 = Contactor KM1</li>
+            <li>Implementar el enclavamiento con contacto Q0.0 en paralelo con START</li>
+            <li>Probar en simulador: arrancar, detener, verificar auto-retención</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 02 · U1</span>
+          <span class="ej-title">Control de semáforo 3 luces</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Controlar un semáforo con 3 salidas (rojo, amarillo, verde) usando SET/RESET.</p>
+          <ol>
+            <li>Q0.0 = Rojo, Q0.1 = Amarillo, Q0.2 = Verde</li>
+            <li>Al iniciar: rojo activo, los demás apagados</li>
+            <li>I0.0 = sensor de paso → verde, luego amarillo, luego rojo</li>
+            <li>Usar bobinas SET/RESET para asegurarse que solo una luz esté activa</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 03 · U3</span>
+          <span class="ej-title">Temporizador TON — arranque temporizado</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Un motor arranca 5 segundos después de presionar START.</p>
+          <ol>
+            <li>I0.0 = Pulsador START</li>
+            <li>Instanciar TON con PT = T#5s</li>
+            <li>Conectar bobina del motor a la salida Q del temporizador</li>
+            <li>I0.1 = STOP resetea el temporizador y para el motor</li>
+            <li>Verificar que ET (elapsed time) avanza correctamente en simulador</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 04 · U3</span>
+          <span class="ej-title">Temporizador TOF — ventilador con post-marcha</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Un ventilador sigue funcionando 10 segundos después de apagar la máquina.</p>
+          <ol>
+            <li>I0.0 = Marcha máquina</li>
+            <li>Q0.0 = Ventilador (activo mientras máquina ON + 10s después)</li>
+            <li>Usar TOF con PT = T#10s</li>
+            <li>Cuando I0.0 cae a FALSE, el TOF empieza a contar</li>
+            <li>Al llegar a PV, Q del TOF se pone FALSE y el ventilador para</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 05 · U3</span>
+          <span class="ej-title">Contador CTU — llenado de envases</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Una llenadora debe detener el proceso al completar 100 envases.</p>
+          <ol>
+            <li>I0.0 = Sensor fotoeléctrico (flanco ascendente por envase)</li>
+            <li>I0.1 = Reset del contador (inicio de lote)</li>
+            <li>CTU con PV = 100</li>
+            <li>Q del CTU activa alarma y detiene la cinta (Q0.1)</li>
+            <li>Mostrar CV en display HMI (simular con variable)</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 06 · U4</span>
+          <span class="ej-title">Tambor secuenciador — cinta con 4 pasos</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Secuencia automática de 4 pasos controlada por tiempo.</p>
+          <ol>
+            <li>Paso 1 (5s): Motor A arranca</li>
+            <li>Paso 2 (3s): Motor A + Motor B activos</li>
+            <li>Paso 3 (4s): Solo Motor B activo</li>
+            <li>Paso 4: Todo apagado, ciclo terminado</li>
+            <li>Implementar con CTUD + TON + comparadores EQ</li>
+            <li>I0.0 = inicio de ciclo, I0.1 = parada de emergencia</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="ej-card" onclick="toggleEj(this)">
+        <div class="ej-header">
+          <span class="ej-num">Ej. 07 · U4</span>
+          <span class="ej-title">Comparador — control de nivel de tanque</span>
+          <span class="ej-toggle">▼</span>
+        </div>
+        <div class="ej-body">
+          <p>Controlar una bomba según el nivel de un tanque con señal analógica.</p>
+          <ol>
+            <li>IW64 = entrada analógica sensor de nivel (0–27648 = 0–100%)</li>
+            <li>Si nivel &lt; 20% → activar bomba Q0.0</li>
+            <li>Si nivel &gt; 80% → desactivar bomba Q0.0</li>
+            <li>Usar bloques CMP (LT y GT) con histéresis</li>
+            <li>Usar SET/RESET para evitar oscilaciones</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SOFTWARE LIBRE -->
+<section id="software">
+  <div class="container">
+    <div class="section-label">Herramientas</div>
+    <h2>Software libre recomendado</h2>
+    <div class="sw-grid">
+      <a class="sw-card" href="https://www.openplcproject.com/" target="_blank">
+        <div class="sw-icon">🖥️</div>
+        <div class="sw-name">OpenPLC Runtime</div>
+        <div class="sw-desc">PLC de código abierto que soporta todos los lenguajes IEC 61131-3. Corre en PC, Raspberry Pi y Arduino.</div>
+        <div class="sw-tag">✓ Gratis · Open Source</div>
+      </a>
+      <a class="sw-card" href="https://beremiz.org/" target="_blank">
+        <div class="sw-icon">⚙️</div>
+        <div class="sw-name">Beremiz IDE</div>
+        <div class="sw-desc">IDE completo para programar en todos los lenguajes IEC 61131-3. Compatible con OpenPLC.</div>
+        <div class="sw-tag">✓ Gratis · Windows / Linux</div>
+      </a>
+      <a class="sw-card" href="https://www.codesys.com/products/codesys-development-system/demo-version.html" target="_blank">
+        <div class="sw-icon">🔧</div>
+        <div class="sw-name">CODESYS (Demo)</div>
+        <div class="sw-desc">Estándar de la industria. La versión demo permite programar y simular sin límite de tiempo en modo offline.</div>
+        <div class="sw-tag">✓ Demo gratuita · Windows</div>
+      </a>
+      <a class="sw-card" href="https://new.siemens.com/global/en/products/automation/industry-software/automation-software/tia-portal/s7-plcsim.html" target="_blank">
+        <div class="sw-icon">🏭</div>
+        <div class="sw-name">S7-PLCSIM (Siemens)</div>
+        <div class="sw-desc">Simulador oficial de Siemens para los PLC S7-1200/1500. Requiere TIA Portal (versión trial disponible).</div>
+        <div class="sw-tag">Trial 21 días · Windows</div>
+      </a>
+      <a class="sw-card" href="https://ladedit.com/" target="_blank">
+        <div class="sw-icon">🪜</div>
+        <div class="sw-name">LadEdit</div>
+        <div class="sw-desc">Editor y simulador de Ladder simplificado, ideal para aprender sin instalar software complejo. Funciona en el navegador.</div>
+        <div class="sw-tag">✓ Gratis · Online</div>
+      </a>
+      <a class="sw-card" href="https://www.w3schools.com/python/" target="_blank">
+        <div class="sw-icon">🐍</div>
+        <div class="sw-name">Python + pylogix</div>
+        <div class="sw-desc">Para comunicarse con PLCs Allen-Bradley desde scripts Python. Ideal para integración con sistemas de monitoreo.</div>
+        <div class="sw-tag">✓ Gratis · Multiplataforma</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Curso PLC Básico — <span>IEC 61131-3</span> · Contenido educativo de acceso libre · Videos embebidos de YouTube</p>
+</footer>
+
+<script>
+  // ─── VIDEO LOADER ───
+  function loadVideo(containerId, ytId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    container.classList.add('loaded');
+  }
+
+  // ─── TABS ───
+  const panels = document.querySelectorAll('.tab-panel');
+  const btns   = document.querySelectorAll('.tab-btn');
+  let visited  = new Set([0]);
+
+  function switchTab(i) {
+    panels.forEach((p,j) => { p.classList.toggle('active', j===i); });
+    btns.forEach((b,j)   => { b.classList.toggle('active', j===i); });
+    visited.add(i);
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const pct = Math.round((visited.size / 4) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-pct').textContent = `${visited.size} / 4 unidades`;
+  }
+
+  // Animate progress on load
+  setTimeout(() => updateProgress(), 400);
+
+  // ─── EJERCICIOS TOGGLE ───
+  function toggleEj(card) {
+    const body = card.querySelector('.ej-body');
+    const isOpen = body.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.ej-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.ej-card').forEach(c => c.classList.remove('open'));
+    if (!isOpen) {
+      body.classList.add('open');
+      card.classList.add('open');
+    }
+  }
+
+  // ─── ACTIVE NAV ON SCROLL ───
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a[href^="#"]');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>
